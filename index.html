@@ -3,97 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متجري الإلكتروني</title>
+    <title>متجر الأواني المنزلية</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; color: #333; padding-bottom: 50px; }
-        header { background: #1e293b; color: white; padding: 20px; text-align: center; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .admin-btn { position: absolute; left: 20px; top: 20px; background: #eab308; color: #0f172a; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .admin-btn:hover { background: #ca8a04; }
-        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
-        .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; display: flex; flex-direction: column; }
-        .product-card:hover { transform: translateY(-5px); }
-        .product-img { width: 100%; height: 200px; object-fit: cover; background: #e2e8f0; }
-        .product-details { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .product-title { font-size: 1.1rem; margin-bottom: 8px; font-weight: 600; }
-        .product-price { font-size: 1.2rem; color: #16a34a; font-weight: bold; margin-bottom: 12px; }
-        .buy-btn { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        body { background-color: #f8fafc; color: #1e293b; padding-bottom: 60px; }
+        
+        /* الهيدر بالتصميم القديم */
+        header { background: #0f172a; color: white; padding: 25px 20px; text-align: center; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; }
+        header p { font-size: 0.95rem; color: #94a3b8; }
+        
+        /* زر لوحة التحكم */
+        .admin-toggle-btn { position: absolute; left: 20px; top: 25px; background: #eab308; color: #0f172a; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .admin-toggle-btn:hover { background: #ca8a04; }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        
+        /* الشبكة بالتصميم القديم */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 25px; }
+        
+        /* بطاقة المنتج بالتصميم القديم */
+        .product-card { background: white; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s, box-shadow 0.2s; position: relative; display: flex; flex-direction: column; }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .product-img { width: 100%; height: 220px; object-fit: cover; background-color: #f1f5f9; }
+        .product-info { padding: 18px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-title { font-size: 1.1rem; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
+        .product-price { font-size: 1.25rem; font-weight: 700; color: #059669; margin-bottom: 15px; }
+        
+        .card-actions { display: flex; gap: 8px; }
+        .buy-btn { flex-grow: 1; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .buy-btn:hover { background: #1d4ed8; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 450px; position: relative; }
-        .close-btn { position: absolute; right: 15px; top: 15px; font-size: 20px; cursor: pointer; color: #666; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-        .save-btn { background: #16a34a; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; }
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 10px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: none; }
+        .delete-btn:hover { background: #dc2626; }
+
+        /* نافذة لوحة التحكم */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 480px; position: relative; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .close-btn { position: absolute; left: 20px; top: 20px; font-size: 24px; cursor: pointer; color: #64748b; }
+        .modal h2 { margin-bottom: 20px; color: #0f172a; font-size: 1.4rem; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #334155; }
+        .form-group input { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; }
+        .form-group input:focus { border-color: #2563eb; }
+        .submit-btn { width: 100%; background: #059669; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+        .submit-btn:hover { background: #047857; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>متجري الإلكتروني</h1>
-        <button class="admin-btn" onclick="openAdminModal()">لوحة التحكم</button>
+        <h1>متجر الأواني المنزلية</h1>
+        <p>تشكيلة مميزة من أجود الأواني والدلال والضيافة</p>
+        <button class="admin-toggle-btn" onclick="openAdminModal()">⚙️ لوحة التحكم</button>
     </header>
 
     <div class="container">
         <div class="products-grid" id="productsGrid"></div>
     </div>
 
+    <!-- نافذة إضافة منتج -->
     <div class="modal" id="adminModal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeAdminModal()">&times;</span>
-            <h2 style="margin-bottom: 20px;">إضافة منتج جديد</h2>
+            <h2>إضافة منتج جديد</h2>
             <form id="addProductForm" onsubmit="handleAddProduct(event)">
                 <div class="form-group">
                     <label>اسم المنتج</label>
-                    <input type="text" id="pName" required>
+                    <input type="text" id="pName" placeholder="مثال: طقم دلال قهوة رسلان" required>
                 </div>
                 <div class="form-group">
                     <label>السعر</label>
-                    <input type="text" id="pPrice" required placeholder="مثال: 150 درهم">
+                    <input type="text" id="pPrice" placeholder="مثال: 250 درهم" required>
                 </div>
                 <div class="form-group">
-                    <label>رابط الصورة</label>
-                    <input type="url" id="pImg" required placeholder="https://example.com/image.jpg">
+                    <label>رابط صورة المنتج</label>
+                    <input type="url" id="pImg" placeholder="ضع رابط الصورة هنا" required>
                 </div>
-                <button type="submit" class="save-btn">إضافة للمتجر</button>
+                <button type="submit" class="submit-btn">إضافة المنتج للمتجر</button>
             </form>
         </div>
     </div>
 
     <script>
-        const initialProducts = [
-            { id: 1, name: "منتج تجريبي 1", price: "100 درهم", img: "https://via.placeholder.com/300x200" },
-            { id: 2, name: "منتج تجريبي 2", price: "200 درهم", img: "https://via.placeholder.com/300x200" }
+        // المنتجات الافتراضية
+        const defaultProducts = [
+            { id: 1, name: "طقم دلال قهوة عربية فاخر", price: "350 درهم", img: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=500" },
+            { id: 2, name: "طقم فناجيل وسكاكين ضيافة", price: "180 درهم", img: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=500" }
         ];
 
+        let isAdminMode = false;
+
         function getProducts() {
-            const saved = localStorage.getItem('my_products');
-            return saved ? JSON.parse(saved) : initialProducts;
+            const saved = localStorage.getItem('my_store_products');
+            return saved ? JSON.parse(saved) : defaultProducts;
         }
 
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             const products = getProducts();
             grid.innerHTML = '';
-            
+
             products.forEach(p => {
                 grid.innerHTML += `
                     <div class="product-card">
-                        <img src="${p.img}" class="product-img" alt="${p.name}">
-                        <div class="product-details">
-                            <div class="product-title">${p.name}</div>
-                            <div class="product-price">${p.price}</div>
-                            <button class="buy-btn" onclick="alert('شكرًا لاهتمامك بـ ${p.name}')">طلب المنتج</button>
+                        <img src="${p.img}" class="product-img" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x220?text=صورة+غير+متوفرة'">
+                        <div class="product-info">
+                            <div>
+                                <div class="product-title">${p.name}</div>
+                                <div class="product-price">${p.price}</div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="buy-btn" onclick="alert('شكرًا لطلبك ${p.name}')">طلب المنتج</button>
+                                <button class="delete-btn" style="display: ${isAdminMode ? 'block' : 'none'}" onclick="deleteProduct(${p.id})">حذف</button>
+                            </div>
                         </div>
                     </div>
                 `;
             });
         }
 
-        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
-        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
+        function openAdminModal() {
+            isAdminMode = true;
+            renderProducts();
+            document.getElementById('adminModal').style.display = 'flex';
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+        }
 
         function handleAddProduct(e) {
             e.preventDefault();
@@ -103,11 +140,20 @@
 
             const products = getProducts();
             products.push({ id: Date.now(), name, price, img });
-            localStorage.setItem('my_products', JSON.stringify(products));
+            localStorage.setItem('my_store_products', JSON.stringify(products));
 
             renderProducts();
             closeAdminModal();
             document.getElementById('addProductForm').reset();
+        }
+
+        function deleteProduct(id) {
+            if (confirm('هل أنت تأكد من إزالة هذا المنتج؟')) {
+                let products = getProducts();
+                products = products.filter(p => p.id !== id);
+                localStorage.setItem('my_store_products', JSON.stringify(products));
+                renderProducts();
+            }
         }
 
         renderProducts();
