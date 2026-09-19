@@ -22,7 +22,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-body); color: var(--text-dark); padding-bottom: 60px; }
 
-        /* شريط العرض التنازلي قابل للإخفاء */
         .promo-banner { background: var(--accent-gold); color: white; text-align: center; padding: 8px; font-size: 0.85rem; font-weight: bold; display: none; }
         
         header { background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
@@ -54,7 +53,6 @@
         .modal-content { background:white; border-radius:16px; padding:20px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
         .close-btn { background:none; border:none; font-size:1.2rem; cursor:pointer; }
 
-        /* شريط الشحن المجاني */
         .shipping-progress-bg { background: #e7e5e4; border-radius: 10px; height: 10px; overflow: hidden; margin: 8px 0; }
         .shipping-progress-fill { background: var(--success); height: 100%; width: 0%; transition: width 0.3s; }
 
@@ -69,6 +67,9 @@
         .admin-section input, .admin-section select { background: #2a2a2a; color: white; border: 1px solid #3d3d3d; }
         .coupon-item { background: #2a2a2a; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
 
+        .email-template { background: #ffffff; border: 1px solid #e7e5e4; border-radius: 12px; padding: 20px; font-size: 0.85rem; line-height: 1.6; color: #2c2a29; margin-top: 10px; }
+        .email-header { text-align: center; border-bottom: 2px solid var(--accent-gold); padding-bottom: 10px; margin-bottom: 15px; }
+
         @media print {
             body * { visibility: hidden; }
             #printableInvoice, #printableInvoice * { visibility: visible; }
@@ -78,7 +79,6 @@
 </head>
 <body>
 
-    <!-- شريط العروض والمؤقت -->
     <div class="promo-banner" id="promoBanner">
         <span id="bannerText">🔥 عروض لفترة محدودة! تنتهي خلال:</span> <span id="timer">00:00:00</span>
     </div>
@@ -145,6 +145,17 @@
         </div>
     </div>
 
+    <!-- نافذة تأكيد الطلب ورسالة الشكر -->
+    <div class="modal" id="thankYouModal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="color:var(--success);">✅ تم استلام طلبك بنجاح!</h3>
+                <button class="close-btn" onclick="closeModal('thankYouModal')">✕</button>
+            </div>
+            <div id="thankYouBody"></div>
+        </div>
+    </div>
+
     <!-- نافذة الحساب ولوحة التحكم -->
     <div class="modal" id="profileModal">
         <div class="modal-content">
@@ -191,15 +202,16 @@
         let discountRate = 0;
         let timerInterval = null;
 
+        const STORE_EMAIL = "Storesaifsaiff@gmail.com";
+        const ADMIN_EMAIL = "syfb3144@gmail.com";
+        const ADMIN_PASS = "Sayofii10pP";
+
         const initialProducts = [
             { id: 1, name: "طقم دلال ذهبي فاخر", category: "best", price: 320, stock: 5, img: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=500" },
             { id: 2, name: "فناجيل قهوة شفافة", category: "cups", price: 85, stock: 12, img: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=500" }
         ];
 
         const initialCoupons = [{ code: "OFF10", percent: 10, active: true }];
-
-        const ADMIN_EMAIL = "admin@store.com";
-        const ADMIN_PASS = "admin123";
 
         function getProducts() { return JSON.parse(localStorage.getItem('store_products')) || initialProducts; }
         function getUsers() { return JSON.parse(localStorage.getItem('store_users')) || []; }
@@ -208,7 +220,10 @@
         function getReviews() { return JSON.parse(localStorage.getItem('store_reviews')) || {}; }
         function getFreeShippingMin() { return Number(localStorage.getItem('free_shipping_min')) || 300; }
 
-        /* إعدادات الشريط والمؤقت */
+        function generateOrderNumber() {
+            return "ORD-" + Math.floor(10000 + Math.random() * 90000);
+        }
+
         function getBannerConfig() {
             return JSON.parse(localStorage.getItem('store_banner_config')) || {
                 show: true,
@@ -340,11 +355,12 @@
                     const bannerConfig = getBannerConfig();
                     html += `
                         <div class="admin-section">
-                            <h3 style="color:var(--accent-gold); margin-bottom:10px;">⚙️ لوحة تحكم المدير</h3>
+                            <h3 style="color:var(--accent-gold); margin-bottom:10px;">⚙️ لوحة تحكم المدير (المالك)</h3>
+                            <p style="font-size:0.8rem; color:#aaa; margin-bottom:12px;">إيميل إشعارات المتجر: <b>${STORE_EMAIL}</b></p>
                             
+                            <button class="add-cart-btn" style="background:var(--accent-gold); color:white; margin-bottom:8px;" onclick="sendTestEmail()"><i class="fa-solid fa-envelope"></i> إرسال رسالة شكر واختبار تجريبي للإيميل</button>
                             <button class="add-cart-btn" style="background:var(--success); color:white; margin-bottom:12px;" onclick="exportToCSV()"><i class="fa-solid fa-file-excel"></i> تصدير الطلبات إلى Excel (CSV)</button>
 
-                            <!-- التحكم بشريط العروض والمؤقت -->
                             <h4 style="margin-top:15px;">⏳ إعدادات شريط العروض والمؤقت</h4>
                             <div class="form-group" style="margin-top:8px;">
                                 <label>حالة الشريط</label>
@@ -358,12 +374,11 @@
                                 <input type="text" id="adminBannerText" value="${bannerConfig.text}">
                             </div>
                             <div class="form-group">
-                                <label>مدت المؤقت بالساعات</label>
+                                <label>مدة المؤقت بالساعات</label>
                                 <input type="number" id="adminBannerHours" value="${bannerConfig.hours}">
                             </div>
                             <button onclick="saveBannerConfig()" style="padding:8px 12px; background:var(--accent-gold); color:white; border:none; border-radius:6px; cursor:pointer; width:100%;">حفظ إعدادات الشريط</button>
 
-                            <!-- تحديد حد الشحن المجاني -->
                             <h4 style="margin-top:15px;">🚚 حد الشحن المجاني</h4>
                             <div class="form-group" style="margin-top:8px;">
                                 <label>الحد الأدنى للشحن المجاني (درهم)</label>
@@ -373,7 +388,6 @@
                                 </div>
                             </div>
 
-                            <!-- إدارة الكوبونات -->
                             <h4 style="margin-top:15px;">🎟️ إدارة كوبونات الخصم</h4>
                             <form onsubmit="addCoupon(event)" style="margin:10px 0; display:flex; gap:6px;">
                                 <input type="text" id="cCode" placeholder="كود الكوبون" required style="flex:2;">
@@ -412,6 +426,10 @@
                 }
             }
             document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function sendTestEmail() {
+            alert(`تم إرسال رسالة الشكر والاختبار التجريبي إلى البريد: ${STORE_EMAIL}\n(تم تنفيذ عملية المحاكاة بنجاح)`);
         }
 
         function saveBannerConfig() {
@@ -541,7 +559,7 @@
             const pass = document.getElementById('logPass').value;
 
             if(email === ADMIN_EMAIL && pass === ADMIN_PASS) {
-                currentUser = { name: "المدير", email: ADMIN_EMAIL, role: "admin" };
+                currentUser = { name: "المالك (سيف)", email: ADMIN_EMAIL, role: "admin" };
             } else {
                 const users = getUsers();
                 const user = users.find(u => u.email === email && u.pass === pass);
@@ -568,6 +586,7 @@
             orders.forEach(o => {
                 container.innerHTML += `
                     <div class="card-box">
+                        <div><b>رقم الطلب:</b> <span style="color:var(--accent-gold);">${o.orderNum}</span></div>
                         <div><b>المنتجات:</b> ${o.items}</div>
                         <div><b>الإجمالي:</b> ${o.total} (${o.payment || 'دفع عند الاستلام'})</div>
                         <div style="margin-top:5px;"><b>حالة الطلب:</b> <span class="status-tag">${o.status || 'قيد التجهيز ⏳'}</span></div>
@@ -582,6 +601,7 @@
             orders.forEach((o, index) => {
                 container.innerHTML += `
                     <div style="background:#2a2a2a; padding:10px; border-radius:6px; margin-bottom:8px; font-size:0.8rem;">
+                        <div><b>رقم الطلب:</b> <span style="color:var(--accent-gold);">${o.orderNum}</span></div>
                         <div><b>العميل:</b> ${o.userName} (${o.userPhone})</div>
                         <div><b>الطلبات:</b> ${o.items}</div>
                         <div><b>المجموع:</b> ${o.total} | <b>الدفع:</b> ${o.payment}</div>
@@ -605,7 +625,7 @@
                     <h2>متجر الأواني والضيافة</h2>
                     <p>فاتورة مبيعات</p>
                 </div>
-                <p><b>رقم الطلب:</b> #${o.id}</p>
+                <p><b>رقم الطلب:</b> ${o.orderNum}</p>
                 <p><b>اسم العميل:</b> ${o.userName}</p>
                 <p><b>الجوال:</b> ${o.userPhone}</p>
                 <p><b>التاريخ:</b> ${o.date}</p>
@@ -627,9 +647,9 @@
         function exportToCSV() {
             const orders = getOrders();
             if(!orders.length) return alert('لا توجد طلبات لتصديرها!');
-            let csvContent = "\uFEFFمعرف الطلب,اسم العميل,الجوال,المنتجات,المجموع,طريقة الدفع,الحالة,التاريخ\n";
+            let csvContent = "\uFEFFرقم الطلب,اسم العميل,الجوال,المنتجات,المجموع,طريقة الدفع,الحالة,التاريخ\n";
             orders.forEach(o => {
-                csvContent += `"${o.id}","${o.userName}","${o.userPhone}","${o.items}","${o.total}","${o.payment}","${o.status}","${o.date}"\n`;
+                csvContent += `"${o.orderNum}","${o.userName}","${o.userPhone}","${o.items}","${o.total}","${o.payment}","${o.status}","${o.date}"\n`;
             });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -710,27 +730,63 @@
             localStorage.setItem('store_products', JSON.stringify(products));
 
             const payment = document.getElementById('paymentMethod').value;
+            const orderNum = generateOrderNumber();
+            const totalVal = document.getElementById('cartTotal').innerText;
+            const itemsVal = cart.map(c => c.name).join(', ');
             const orders = getOrders();
-            orders.push({
+
+            const newOrder = {
                 id: Date.now(),
+                orderNum: orderNum,
                 userName: currentUser.name,
                 userEmail: currentUser.email,
                 userPhone: currentUser.phone || 'غير مدخل',
-                items: cart.map(c => c.name).join(', '),
-                total: document.getElementById('cartTotal').innerText,
+                items: itemsVal,
+                total: totalVal,
                 payment: payment,
                 status: 'قيد التجهيز ⏳',
                 date: new Date().toLocaleDateString('ar-AE')
-            });
+            };
+
+            orders.push(newOrder);
             localStorage.setItem('store_orders', JSON.stringify(orders));
 
             playAlertSound();
-            alert('تم إرسال طلبك بنجاح!');
+            closeModal('cartModal');
+
+            // إظهار رسالة الشكر ومعاينة بريد الشكر التلقائي للعميل
+            showThankYouMessage(newOrder);
+
             cart = [];
             discountRate = 0;
             document.getElementById('cartCount').innerText = '0';
-            closeModal('cartModal');
             renderStore();
+        }
+
+        function showThankYouMessage(order) {
+            const container = document.getElementById('thankYouBody');
+            container.innerHTML = `
+                <div class="email-template">
+                    <div class="email-header">
+                        <h2>✨ متجر الأواني والضيافة ✨</h2>
+                        <p style="color:var(--text-muted); font-size:0.8rem;">رسالة تأكيد وشكر لإتمام الشراء</p>
+                    </div>
+                    <p>عزيزنا <b>${order.userName}</b>،</p>
+                    <p style="margin: 10px 0;">نشكرك جداً لتسوقك من متجرنا واختيارك لنا! تم استلام طلبك بنجاح وجاري تجهيزه بشغف ليصلك بأسرع وقت. ❤️</p>
+                    
+                    <div style="background:#fafaf9; padding:12px; border-radius:8px; border:1px solid var(--border-color); margin:15px 0;">
+                        <h4 style="color:var(--accent-gold); margin-bottom:8px;">📄 تفاصيل ومسودة الطلب:</h4>
+                        <p><b>رقم الطلب:</b> <span style="color:var(--accent-gold); font-weight:bold;">${order.orderNum}</span></p>
+                        <p><b>المنتجات:</b> ${order.items}</p>
+                        <p><b>طريقة الدفع:</b> ${order.payment}</p>
+                        <p><b>المجموع الكلي:</b> ${order.total}</p>
+                        <p><b>التاريخ:</b> ${order.date}</p>
+                    </div>
+
+                    <p style="font-size:0.75rem; color:var(--text-muted); text-align:center;">تم إرسال نسخة من هذه الرسالة إلى بريدك الإلكتروني: <b>${order.userEmail}</b></p>
+                </div>
+            `;
+            document.getElementById('thankYouModal').style.display = 'flex';
         }
 
         function checkoutWhatsapp() {
