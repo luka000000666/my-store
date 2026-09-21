@@ -287,7 +287,16 @@
         const initialCoupons = [{ code: "OFF10", percent: 10, active: true }];
 
         function getCategories() { return JSON.parse(localStorage.getItem('store_categories')) || initialCategories; }
-        function getProducts() { return JSON.parse(localStorage.getItem('store_products')) || initialProducts; }
+        
+        function getProducts() { 
+            let stored = localStorage.getItem('store_products');
+            if (!stored) {
+                localStorage.setItem('store_products', JSON.stringify(initialProducts));
+                return initialProducts;
+            }
+            return JSON.parse(stored);
+        }
+
         function getOrders() { return JSON.parse(localStorage.getItem('store_orders')) || []; }
         function getCoupons() { return JSON.parse(localStorage.getItem('store_coupons')) || initialCoupons; }
         function getReviews() { return JSON.parse(localStorage.getItem('store_reviews')) || {}; }
@@ -329,7 +338,7 @@
 
                 const grid = document.getElementById('singleCategoryGrid');
                 grid.innerHTML = '';
-                const filtered = products.filter(p => p.category === activeCategory && p.name.includes(filterQuery));
+                const filtered = products.filter(p => p.category === activeCategory && p.name.toLowerCase().includes(filterQuery.toLowerCase()));
                 filtered.forEach(p => { grid.innerHTML += createProductCardHTML(p); });
             } else {
                 document.getElementById('homeSectionsView').style.display = 'block';
@@ -351,7 +360,7 @@
                     const grid = document.getElementById('grid_' + cat.id);
                     if(!grid) return;
                     grid.innerHTML = '';
-                    const filtered = products.filter(p => p.category === cat.id && p.name.includes(filterQuery));
+                    const filtered = products.filter(p => p.category === cat.id && p.name.toLowerCase().includes(filterQuery.toLowerCase()));
                     filtered.forEach(p => { grid.innerHTML += createProductCardHTML(p); });
                 });
             }
@@ -603,7 +612,7 @@
             localStorage.setItem('store_products', JSON.stringify(products));
             renderAdminProductsList();
             renderStore();
-            alert('تم حذف المنتج بنجاح!');
+            alert('تم حذف المنتج بنجاح واختفى من المتجر فوراً!');
         }
 
         function renderMyOrders() {
