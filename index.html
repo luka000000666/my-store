@@ -160,7 +160,7 @@
         </div>
     </footer>
 
-    <!-- نافذة معاينة الوسائط (صورة أو فيديو) -->
+    <!-- نافذة معاينة الوسائط -->
     <div class="modal" id="mediaPreviewModal">
         <div class="modal-content" style="text-align:center;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -227,7 +227,7 @@
         </div>
     </div>
 
-    <!-- نافذة الحساب وتسجيل الدخول / لوحة الإدارة -->
+    <!-- نافذة الحساب / لوحة الإدارة -->
     <div class="modal" id="profileModal">
         <div class="modal-content" id="profileModalContent"></div>
     </div>
@@ -266,6 +266,7 @@
         let discountRate = 0;
         let activeCategory = null;
         let selectedPaymentMethod = 'visa';
+        let temporaryBase64Image = ""; 
 
         const STORE_EMAIL = "Storesaifsaiff@gmail.com";
         const ADMIN_EMAIL = "syfb3144@gmail.com";
@@ -287,7 +288,6 @@
 
         function getCategories() { return JSON.parse(localStorage.getItem('store_categories')) || initialCategories; }
         function getProducts() { return JSON.parse(localStorage.getItem('store_products')) || initialProducts; }
-        function getUsers() { return JSON.parse(localStorage.getItem('store_users')) || []; }
         function getOrders() { return JSON.parse(localStorage.getItem('store_orders')) || []; }
         function getCoupons() { return JSON.parse(localStorage.getItem('store_coupons')) || initialCoupons; }
         function getReviews() { return JSON.parse(localStorage.getItem('store_reviews')) || {}; }
@@ -507,8 +507,16 @@
                                 <div class="form-group"><label style="color:#aaa;">القسم</label><select id="pCat"></select></div>
                                 <div class="form-group"><label style="color:#aaa;">السعر (درهم)</label><input type="number" id="pPrice" required></div>
                                 <div class="form-group"><label style="color:#aaa;">الكمية</label><input type="number" id="pStock" value="10" required></div>
-                                <div class="form-group"><label style="color:#aaa;">نوع الوسائط</label><select id="pMediaType"><option value="img">رابط صورة</option><option value="video">رابط فيديو (MP4)</option></select></div>
-                                <div class="form-group"><label style="color:#aaa;">رابط الوسائط (URL)</label><input type="url" id="pMediaUrl" required placeholder="https://..."></div>
+                                
+                                <div class="form-group">
+                                    <label style="color:#aaa;">اختر صورة المنتج من الألبوم</label>
+                                    <input type="file" id="pImageFile" accept="image/*" onchange="handleImageUpload(event)" style="padding: 6px;">
+                                    <div id="imagePreviewContainer" style="margin-top: 6px; display: none;">
+                                        <img id="imgPreviewTag" src="" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #444;">
+                                    </div>
+                                </div>
+
+                                <div class="form-group"><label style="color:#aaa;">أو رابط الوسائط الخارجي (اختياري بدلاً من الألبوم)</label><input type="url" id="pMediaUrl" placeholder="https://..."></div>
                                 <button type="submit" class="add-cart-btn" style="background:var(--success); color:white; width:100%;">حفظ المنتج</button>
                             </form>
                         </div>
@@ -526,6 +534,19 @@
             document.getElementById('profileModal').style.display = 'flex';
         }
 
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+                temporaryBase64Image = uploadEvent.target.result;
+                const previewTag = document.getElementById('imgPreviewTag');
+                previewTag.src = temporaryBase64Image;
+                document.getElementById('imagePreviewContainer').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
         function renderAdminCategoriesList() {
             const categories = getCategories();
             const container = document.getElementById('adminCategoriesList');
@@ -534,13 +555,15 @@
                 container.innerHTML += `
                     <div class="admin-prod-item">
                         <input type="text" id="cat_input_${cat.id}" value="${cat.name}" style="padding:4px 8px; border-radius:4px; width:65%;">
-                        <button onclick="updateCategoryName('${cat.id}')" style="background:var(--success); color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">تعديل</button>
+                        <button type="button" onclick="updateCategoryName('${cat.id}')" style="background:var(--success); color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">تعديل</button>
                     </div>`;
             });
         }
 
         function updateCategoryName(catId) {
-            const newName = document.getElementById(`cat_input_${catId}`).value.trim();
+            const inputField = document.getElementById(`cat_input_${catId}`);
+            if(!inputField) return;
+            const newName = inputField.value.trim();
             if(!newName) return alert('اسم القسم لا يمكن أن يكون فارغاً!');
             let categories = getCategories();
             const cat = categories.find(c => c.id === catId);
@@ -569,7 +592,7 @@
                 container.innerHTML += `
                     <div class="admin-prod-item">
                         <span>${p.name} (${p.price} د.إ)</span>
-                        <button onclick="deleteProduct(${p.id})" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">حذف</button>
+                        <button type="button" onclick="deleteProduct(${p.id})" style="background:var(--danger); color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">حذف</button>
                     </div>`;
             });
         }
@@ -734,6 +757,13 @@
 
         function saveProduct(e) {
             e.preventDefault();
+            const urlInput = document.getElementById('pMediaUrl').value.trim();
+            const finalMediaUrl = temporaryBase64Image || urlInput;
+
+            if (!finalMediaUrl) {
+                return alert('يرجى إما اختيار صورة من الألبوم أو وضع رابط صورة!');
+            }
+
             const products = getProducts();
             products.push({
                 id: Date.now(),
@@ -741,10 +771,14 @@
                 category: document.getElementById('pCat').value,
                 price: Number(document.getElementById('pPrice').value),
                 stock: Number(document.getElementById('pStock').value),
-                mediaType: document.getElementById('pMediaType').value,
-                mediaUrl: document.getElementById('pMediaUrl').value
+                mediaType: "img",
+                mediaUrl: finalMediaUrl
             });
             localStorage.setItem('store_products', JSON.stringify(products));
+            
+            temporaryBase64Image = "";
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+
             renderStore();
             renderAdminProductsList();
             alert('تم حفظ المنتج بنجاح');
