@@ -227,7 +227,7 @@
         </div>
     </div>
 
-    <!-- نافذة الحساب / لوحة الإدارة -->
+    <!-- نافذة الحساب / تسجيل الدخول / إنشاء حساب / لوحة الإدارة -->
     <div class="modal" id="profileModal">
         <div class="modal-content" id="profileModalContent"></div>
     </div>
@@ -297,6 +297,7 @@
             return JSON.parse(stored);
         }
 
+        function getUsers() { return JSON.parse(localStorage.getItem('store_users')) || []; }
         function getOrders() { return JSON.parse(localStorage.getItem('store_orders')) || []; }
         function getCoupons() { return JSON.parse(localStorage.getItem('store_coupons')) || initialCoupons; }
         function getReviews() { return JSON.parse(localStorage.getItem('store_reviews')) || {}; }
@@ -463,20 +464,50 @@
             closeModal('reviewModal');
         }
 
-        function openProfileModal() {
+        function openProfileModal(viewMode = 'login') {
             const container = document.getElementById('profileModalContent');
             if(!currentUser) {
-                container.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3>تسجيل الدخول</h3>
-                        <button class="close-btn" onclick="closeModal('profileModal')">✕</button>
-                    </div>
-                    <form onsubmit="login(event)">
-                        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="logEmail" placeholder="your@email.com" required></div>
-                        <div class="form-group"><label>كلمة المرور</label><input type="password" id="logPass" placeholder="••••••••" required></div>
-                        <button type="submit" class="add-cart-btn" style="background:var(--accent-gold); color:white; font-weight:bold; padding:12px; margin-top:10px; width:100%;">دخول</button>
-                    </form>
-                `;
+                if(viewMode === 'register') {
+                    container.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3>إنشاء حساب جديد</h3>
+                            <button class="close-btn" onclick="closeModal('profileModal')">✕</button>
+                        </div>
+                        <form onsubmit="startRegistration(event)">
+                            <div class="form-group"><label>الاسم الكامل</label><input type="text" id="regName" placeholder="مثال: سيف عبدالله" required></div>
+                            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="regEmail" placeholder="your@email.com" required></div>
+                            <div class="form-group"><label>كلمة المرور</label><input type="password" id="regPass" placeholder="••••••••" required></div>
+                            <button type="submit" class="add-cart-btn" style="background:var(--accent-gold); color:white; font-weight:bold; padding:12px; margin-top:10px; width:100%;">إرسال رمز التحقق</button>
+                            <p style="text-align:center; margin-top:12px; font-size:0.85rem;">لديك حساب بالفعل؟ <span style="color:var(--accent-gold); cursor:pointer; font-weight:bold;" onclick="openProfileModal('login')">سجل دخولك</span></p>
+                        </form>
+                    `;
+                } else if(viewMode === 'verify') {
+                    const tempReg = JSON.parse(localStorage.getItem('temp_reg_user')) || {};
+                    container.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3>التحقق من البريد الإلكتروني</h3>
+                            <button class="close-btn" onclick="closeModal('profileModal')">✕</button>
+                        </div>
+                        <p style="font-size:0.85rem; margin-bottom:12px; color:var(--text-muted);">تم إرسال رمز التحقق المكون من 4 أرقام إلى بريدك: <b>${tempReg.email}</b><br><small style="color:var(--accent-gold);">(رمز التحقق التجريبي الظاهر لديك هو: <b>${tempReg.code}</b>)</small></p>
+                        <form onsubmit="verifyRegistrationCode(event)">
+                            <div class="form-group"><label>أدخل رمز التحقق</label><input type="text" id="verCodeInput" placeholder="xxxx" maxlength="4" required style="text-align:center; font-size:1.2rem; letter-spacing:5px;" autofocus></div>
+                            <button type="submit" class="add-cart-btn" style="background:var(--success); color:white; font-weight:bold; padding:12px; margin-top:10px; width:100%;">تأكيد وتسجيل الحساب</button>
+                        </form>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3>تسجيل الدخول</h3>
+                            <button class="close-btn" onclick="closeModal('profileModal')">✕</button>
+                        </div>
+                        <form onsubmit="login(event)">
+                            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="logEmail" placeholder="your@email.com" required></div>
+                            <div class="form-group"><label>كلمة المرور</label><input type="password" id="logPass" placeholder="••••••••" required></div>
+                            <button type="submit" class="add-cart-btn" style="background:var(--accent-gold); color:white; font-weight:bold; padding:12px; margin-top:10px; width:100%;">دخول</button>
+                            <p style="text-align:center; margin-top:12px; font-size:0.85rem;">ليس لديك حساب؟ <span style="color:var(--accent-gold); cursor:pointer; font-weight:bold;" onclick="openProfileModal('register')">أنشئ حساباً جديداً</span></p>
+                        </form>
+                    `;
+                }
             } else {
                 let html = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -541,6 +572,46 @@
                 }
             }
             document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function startRegistration(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
+
+            let users = getUsers();
+            if(users.some(u => u.email === email) || email === ADMIN_EMAIL) {
+                return alert('هذا البريد الإلكتروني مسجل مسبقاً!');
+            }
+
+            const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+            localStorage.setItem('temp_reg_user', JSON.stringify({ name, email, pass, code: verificationCode }));
+            
+            alert(`تم إرسال رمز التحقق (لغرض التجربة الرمز هو: ${verificationCode}) إلى الإيميل: ${email}`);
+            openProfileModal('verify');
+        }
+
+        function verifyRegistrationCode(e) {
+            e.preventDefault();
+            const enteredCode = document.getElementById('verCodeInput').value.trim();
+            const tempReg = JSON.parse(localStorage.getItem('temp_reg_user'));
+
+            if(!tempReg || enteredCode !== tempReg.code) {
+                return alert('رمز التحقق غير صحيح! حاول مرة أخرى.');
+            }
+
+            let users = getUsers();
+            users.push({ name: tempReg.name, email: tempReg.email, pass: tempReg.pass, role: 'customer' });
+            localStorage.setItem('store_users', JSON.stringify(users));
+
+            currentUser = { name: tempReg.name, email: tempReg.email, role: 'customer' };
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            localStorage.removeItem('temp_reg_user');
+
+            alert('تم التحقق وإنشاء الحساب بنجاح! أهلاً بك.');
+            openProfileModal();
+            renderStore();
         }
 
         function handleImageUpload(event) {
@@ -648,13 +719,19 @@
 
         function login(e) {
             e.preventDefault();
-            const email = document.getElementById('logEmail').value;
-            const pass = document.getElementById('logPass').value;
+            const email = document.getElementById('logEmail').value.trim();
+            const pass = document.getElementById('logPass').value.trim();
 
             if(email === ADMIN_EMAIL && pass === ADMIN_PASS) {
                 currentUser = { name: "سيف عبدالله", email: ADMIN_EMAIL, role: "admin" };
             } else {
-                return alert('بيانات الدخول غير صحيحة! استخدم بريد المدير وكلمة المرور الخاصة بك.');
+                const users = getUsers();
+                const foundUser = users.find(u => u.email === email && u.pass === pass);
+                if(foundUser) {
+                    currentUser = { name: foundUser.name, email: foundUser.email, role: "customer" };
+                } else {
+                    return alert('بيانات الدخول غير صحيحة أو أن الحساب غير مسجل!');
+                }
             }
 
             localStorage.setItem('current_user', JSON.stringify(currentUser));
